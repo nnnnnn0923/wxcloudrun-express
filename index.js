@@ -1,61 +1,57 @@
-const path = require("path");
-const express = require("express");
-const cors = require("cors");
-const morgan = require("morgan");
-const { init: initDB, Counter } = require("./db");
+// 云函数入口文件
+const cloud = require('wx-server-sdk')
 
-const logger = morgan("tiny");
+cloud.init({
+  env:cloud.DYNAMIC_CURRENT_ENV
+})
 
-const app = express();
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-app.use(cors());
-app.use(logger);
-
-// 首页
-app.get("/", async (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// 更新计数
-app.post("/api/count", async (req, res) => {
-  const { action } = req.body;
-  if (action === "inc") {
-    await Counter.create();
-  } else if (action === "clear") {
-    await Counter.destroy({
-      truncate: true,
-    });
+// 云函数入口函数
+exports.main = async (event, context) => {
+  try {
+    const result = await cloud.openapi.uniformMessage.send({
+        "touser": event.openid,
+        
+        "mpTemplateMsg": {
+          
+          "appid": 'wx8dacd6275d97194f',
+          "template_Id": 'HL5fbGpmGtRADoDMDcEzB6IzyO67s7sxE6YXUwr-5Z8',
+          "url": 'https://developers.weixin.qq.com/miniprogram/dev/api/open-api/login/wx.login.html',
+          "miniprogram": {
+            "appid": 'wx212db439081e9ea8',
+            "pagepath": 'index'
+          },
+          // "miniprogram": {
+          //   "appid": 'wx212db439081e9ea8',
+          //   "pagepath": 'pages/index/index'
+          // },
+          "data": {
+            "thing1": {
+              "value": '恭喜你购买成功！',
+              "color": '#173177'
+            },
+            "date4": {
+              "value": '2022-01-01 16:36',
+              "color": '#173177'
+            },
+            "thing6": {
+              "value": '臭袜子',
+              "color": '#173177'
+            },
+            "thing7": {
+              "value": '100双',
+              "color": '#173177'
+            },
+            "thing8": {
+              "value": '郭必晓',
+              "color": '#173177'
+            }
+          },
+         
+        }
+        
+      })
+    return result
+  } catch (err) {
+    return err
   }
-  res.send({
-    code: 0,
-    data: await Counter.count(),
-  });
-});
-
-// 获取计数
-app.get("/api/count", async (req, res) => {
-  const result = await Counter.count();
-  res.send({
-    code: 0,
-    data: result,
-  });
-});
-
-// 小程序调用，获取微信 Open ID
-app.get("/api/wx_openid", async (req, res) => {
-  if (req.headers["x-wx-source"]) {
-    res.send(req.headers["x-wx-openid"]);
-  }
-});
-
-const port = process.env.PORT || 80;
-
-async function bootstrap() {
-  await initDB();
-  app.listen(port, () => {
-    console.log("启动成功", port);
-  });
 }
-
-bootstrap();
